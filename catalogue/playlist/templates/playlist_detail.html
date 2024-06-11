@@ -1,0 +1,10 @@
+{% extends 'base_generic.html' %} {% block content %}
+<h1>{{ playlist.name }}</h1>
+<ul>
+  {% for playlist_track in playlist.playlisttrack_set.all %}
+  <li>{{ playlist_track.track.title }} (Order: {{ playlist_track.order }})</li>
+  {% endfor %}
+</ul>
+<a href="{% url 'playlist-update' playlist.uuid %}">Edit</a> |
+<a href="{% url 'playlist-list' %}">Back to list</a>
+{% endblock %}
