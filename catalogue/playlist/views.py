@@ -1,17 +1,9 @@
-from rest_framework import generics
+from rest_framework import generics, viewsets
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.forms import inlineformset_factory
-from django.views.generic import (
-    ListView,
-    DetailView,
-    CreateView,
-    UpdateView,
-    DeleteView,
-)
 
 from .models import Artist, Album, Track, Playlist, PlaylistTrack
-from .forms import PlaylistForm, PlaylistTrackForm
 from .serializers import (
     ArtistSerializer,
     AlbumSerializer,
@@ -21,83 +13,67 @@ from .serializers import (
 
 
 # Views for REST API
-class ArtistListView(generics.ListAPIView):
+class ArtistViewSet(viewsets.ModelViewSet):
     queryset = Artist.objects.all()
     serializer_class = ArtistSerializer
 
 
-class AlbumListView(generics.ListAPIView):
+class AlbumViewSet(viewsets.ModelViewSet):
     queryset = Album.objects.all()
     serializer_class = AlbumSerializer
 
 
-class TrackListView(generics.ListAPIView):
+class TrackViewSet(viewsets.ModelViewSet):
     queryset = Track.objects.all()
     serializer_class = TrackSerializer
 
 
-class PlaylistListCreateView(generics.ListCreateAPIView):
+class PlaylistViewSet(viewsets.ModelViewSet):
     queryset = Playlist.objects.all()
     serializer_class = PlaylistSerializer
 
 
-class PlaylistRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Playlist.objects.all()
-    serializer_class = PlaylistSerializer
+# Template Views
+def playlist_list(request):
+    playlists = Playlist.objects.all()
+    return render(request, "playlist_list.html", {"playlists": playlists})
 
 
-# Views for template base API
-class PlaylistListView(ListView):
-    model = Playlist
-    template_name = "playlist/playlist_list.html"
-    context_object_name = "playlists"
+def playlist_detail(request, uuid):
+    playlist = get_object_or_404(Playlist, uuid=uuid)
+    if request.method == "POST":
+        if "delete" in request.POST:
+            playlist.delete()
+            return redirect("playlist_list")
+    return render(request, "playlist_detail.html", {"playlist": playlist})
 
 
-class PlaylistDetailView(DetailView):
-    model = Playlist
-    template_name = "playlist/playlist_detail.html"
-    context_object_name = "playlist"
+def playlist_create(request):
+    if request.method == "POST":
+        name = request.POST["name"]
+        playlist = Playlist.objects.create(name=name)
+        return redirect("playlist_detail", uuid=playlist.uuid)
+    return render(request, "playlist_form.html")
 
 
-class PlaylistCreateView(CreateView):
-    model = Playlist
-    form_class = PlaylistForm
-    template_name = "playlist/playlist_form.html"
-    success_url = reverse_lazy("playlist-list")
+def playlist_update(request, uuid):
+    playlist = get_object_or_404(Playlist, uuid=uuid)
+    if request.method == "POST":
+        playlist.name = request.POST["name"]
+        playlist.save()
+        return redirect("playlist_detail", uuid=playlist.uuid)
+    return render(request, "playlist_form.html", {"playlist": playlist})
 
 
-class PlaylistUpdateView(UpdateView):
-    model = Playlist
-    form_class = PlaylistForm
-    template_name = "playlist/playlist_form.html"
-    success_url = reverse_lazy("playlist-list")
-
-    def get_context_data(self, **kwargs):
-        data = super().get_context_data(**kwargs)
-        PlaylistTrackFormSet = inlineformset_factory(
-            Playlist, PlaylistTrack, form=PlaylistTrackForm, extra=1
-        )
-        if self.request.POST:
-            data["tracks"] = PlaylistTrackFormSet(
-                self.request.POST, instance=self.object
-            )
-        else:
-            data["tracks"] = PlaylistTrackFormSet(instance=self.object)
-        return data
-
-    def form_valid(self, form):
-        context = self.get_context_data()
-        tracks = context["tracks"]
-        if form.is_valid() and tracks.is_valid():
-            self.object = form.save()
-            tracks.instance = self.object
-            tracks.save()
-            return redirect(self.get_success_url())
-        else:
-            return self.render_to_response(self.get_context_data(form=form))
-
-
-class PlaylistDeleteView(DeleteView):
-    model = Playlist
-    template_name = "playlist/playlist_confirm_delete.html"
-    success_url = reverse_lazy("playlist-list")
+def playlist_add_track(request, uuid):
+    playlist = get_object_or_404(Playlist, uuid=uuid)
+    if request.method == "POST":
+        track_id = request.POST["track"]
+        order = request.POST["order"]
+        track = get_object_or_404(Track, id=track_id)
+        PlaylistTrack.objects.create(playlist=playlist, track=track, order=order)
+        return redirect("playlist_detail", uuid=playlist.uuid)
+    tracks = Track.objects.all()
+    return render(
+        request, "playlist_add_track.html", {"playlist": playlist, "tracks": tracks}
+    )

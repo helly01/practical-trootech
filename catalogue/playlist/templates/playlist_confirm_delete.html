@@ -1,9 +1,0 @@
-{% extends 'base_generic.html' %} {% block content %}
-<h1>Delete Playlist</h1>
-<p>Are you sure you want to delete the playlist "{{ object.name }}"?</p>
-<form method="post">
-  {% csrf_token %}
-  <button type="submit">Confirm</button>
-</form>
-<a href="{% url 'playlist-list' %}">Cancel</a>
-{% endblock %}

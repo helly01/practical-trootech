@@ -1,13 +1,19 @@
-{% extends 'base_generic.html' %} {% block content %}
-<h1>Playlists</h1>
-<ul>
-  {% for playlist in playlists %}
-  <li>
-    <a href="{% url 'playlist-detail' playlist.uuid %}">{{ playlist.name }}</a>
-    (<a href="{% url 'playlist-update' playlist.uuid %}">edit</a>,
-    <a href="{% url 'playlist-delete' playlist.uuid %}">delete</a>)
-  </li>
-  {% endfor %}
-</ul>
-<a href="{% url 'playlist-create' %}">Create new playlist</a>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Playlists</title>
+  </head>
+  <body>
+    <h1>Playlists</h1>
+    <ul>
+      {% for playlist in playlists %}
+      <li>
+        <a href="{% url 'playlist_detail' uuid=playlist.uuid %}"
+          >{{ playlist.name }}</a
+        >
+      </li>
+      {% endfor %}
+    </ul>
+    <a href="{% url 'playlist_create' %}">Create New Playlist</a>
+  </body>
+</html>

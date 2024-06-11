@@ -1,35 +1,34 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
 from .views import (
-    ArtistListView,
-    AlbumListView,
-    TrackListView,
-    PlaylistListCreateView,
-    PlaylistRetrieveUpdateDestroyView,
-    PlaylistListView,
-    PlaylistDetailView,
-    PlaylistCreateView,
-    PlaylistUpdateView,
-    PlaylistDeleteView,
+    AlbumViewSet,
+    ArtistViewSet,
+    TrackViewSet,
+    PlaylistViewSet,
+    playlist_list,
+    playlist_create,
+    playlist_detail,
+    playlist_update,
+    playlist_add_track,
 )
 
-urlpatterns = [
-    path("artists/", ArtistListView.as_view(), name="artist-list"),
-    path("albums/", AlbumListView.as_view(), name="album-list"),
-    path("tracks/", TrackListView.as_view(), name="track-list"),
-    path("playlists/", PlaylistListCreateView.as_view(), name="playlist-list-create"),
-    path(
-        "playlists/<uuid:pk>/",
-        PlaylistRetrieveUpdateDestroyView.as_view(),
-        name="playlist-detail",
-    ),
+router = DefaultRouter()
+router.register(r"artists", ArtistViewSet)
+router.register(r"albums", AlbumViewSet)
+router.register(r"tracks", TrackViewSet)
+router.register(r"playlists", PlaylistViewSet)
 
-    # Urls for template base API
-    path('artists/', ArtistListView.as_view(), name='artist-list'),
-    path('albums/', AlbumListView.as_view(), name='album-list'),
-    path('tracks/', TrackListView.as_view(), name='track-list'),
-    path('playlists/', PlaylistListView.as_view(), name='playlist-list'),
-    path('playlists/<uuid:pk>/', PlaylistDetailView.as_view(), name='playlist-detail'),
-    path('playlists/create/', PlaylistCreateView.as_view(), name='playlist-create'),
-    path('playlists/<uuid:pk>/update/', PlaylistUpdateView.as_view(), name='playlist-update'),
-    path('playlists/<uuid:pk>/delete/', PlaylistDeleteView.as_view(), name='playlist-delete'),
+urlpatterns = [
+    path("api/", include(router.urls)),
+    path("api/", include(router.urls)),
+    path("playlists/", playlist_list, name="playlist_list"),
+    path("playlists/create/", playlist_create, name="playlist_create"),
+    path("playlists/<uuid:uuid>/", playlist_detail, name="playlist_detail"),
+    path("playlists/<uuid:uuid>/update/", playlist_update, name="playlist_update"),
+    path(
+        "playlists/<uuid:uuid>/add_track/",
+        playlist_add_track,
+        name="playlist_add_track",
+    ),
 ]

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from .models import Artist, Album, Track, Playlist, PlaylistTrack
 
 
@@ -9,7 +10,7 @@ class TrackSerializer(serializers.ModelSerializer):
 
 
 class AlbumSerializer(serializers.ModelSerializer):
-    tracks = TrackSerializer(many=True, read_only=True)
+    # tracks = TrackSerializer(many=True, read_only=True)
 
     class Meta:
         model = Album
@@ -17,7 +18,7 @@ class AlbumSerializer(serializers.ModelSerializer):
 
 
 class ArtistSerializer(serializers.ModelSerializer):
-    albums = AlbumSerializer(many=True, read_only=True)
+    # albums = AlbumSerializer(many=True, read_only=True)
 
     class Meta:
         model = Artist
@@ -25,6 +26,8 @@ class ArtistSerializer(serializers.ModelSerializer):
 
 
 class PlaylistTrackSerializer(serializers.ModelSerializer):
+    track = serializers.PrimaryKeyRelatedField(queryset=Track.objects.all())
+
     class Meta:
         model = PlaylistTrack
         fields = ["track", "order"]

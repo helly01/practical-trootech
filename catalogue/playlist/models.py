@@ -1,10 +1,10 @@
 import uuid
+
 from django.db import models
 
 
 class Artist(models.Model):
     name = models.CharField(max_length=255)
-    birth_date = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -13,7 +13,6 @@ class Artist(models.Model):
 class Album(models.Model):
     title = models.CharField(max_length=255)
     artist = models.ForeignKey(Artist, related_name="albums", on_delete=models.CASCADE)
-    release_date = models.DateField()
 
     def __str__(self):
         return self.title
@@ -22,7 +21,6 @@ class Album(models.Model):
 class Track(models.Model):
     title = models.CharField(max_length=255)
     album = models.ForeignKey(Album, related_name="tracks", on_delete=models.CASCADE)
-    duration = models.DurationField()
 
     def __str__(self):
         return self.title
@@ -44,4 +42,4 @@ class PlaylistTrack(models.Model):
 
     class Meta:
         ordering = ["order"]
-        unique_together = [["playlist", "track", "order"]]
+        unique_together = ["playlist", "track", "order"]

@@ -1,10 +1,21 @@
-{% extends 'base_generic.html' %} {% block content %}
-<h1>{{ playlist.name }}</h1>
-<ul>
-  {% for playlist_track in playlist.playlisttrack_set.all %}
-  <li>{{ playlist_track.track.title }} (Order: {{ playlist_track.order }})</li>
-  {% endfor %}
-</ul>
-<a href="{% url 'playlist-update' playlist.uuid %}">Edit</a> |
-<a href="{% url 'playlist-list' %}">Back to list</a>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{{ playlist.name }}</title>
+  </head>
+  <body>
+    <h1>{{ playlist.name }}</h1>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" name="delete">Delete Playlist</button>
+    </form>
+    <h2>Tracks</h2>
+    <ul>
+      {% for track in playlist.tracks.all %}
+      <li>{{ track.title }}</li>
+      {% endfor %}
+    </ul>
+    <a href="{% url 'playlist_add_track' uuid=playlist.uuid %}">Add Track</a>
+    <a href="{% url 'playlist_list'  %}">Back</a>
+  </body>
+</html>
