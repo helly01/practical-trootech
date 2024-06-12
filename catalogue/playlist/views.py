@@ -1,7 +1,5 @@
-from rest_framework import generics, viewsets
 from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.forms import inlineformset_factory
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from .models import Artist, Album, Track, Playlist, PlaylistTrack
 from .serializers import (
@@ -11,26 +9,51 @@ from .serializers import (
     PlaylistSerializer,
 )
 
+# ReadOnlyModelViewset allows users to retrieve (list and detail) data but does not allow
+# creating, updating, or deleting data through the API.
 
-# Views for REST API
-class ArtistViewSet(viewsets.ModelViewSet):
+
+# Readonly APIs
+# Manage create, update, and delete through django-admin
+class ArtistViewSet(ReadOnlyModelViewSet):
     queryset = Artist.objects.all()
     serializer_class = ArtistSerializer
 
 
-class AlbumViewSet(viewsets.ModelViewSet):
+class AlbumViewSet(ReadOnlyModelViewSet):
     queryset = Album.objects.all()
     serializer_class = AlbumSerializer
 
 
-class TrackViewSet(viewsets.ModelViewSet):
+class TrackViewSet(ReadOnlyModelViewSet):
     queryset = Track.objects.all()
     serializer_class = TrackSerializer
 
 
-class PlaylistViewSet(viewsets.ModelViewSet):
+class PlaylistViewSet(ReadOnlyModelViewSet):
     queryset = Playlist.objects.all()
     serializer_class = PlaylistSerializer
+
+
+# Views for REST API
+# class ArtistViewSet(viewsets.ModelViewSet):
+#     queryset = Artist.objects.all()
+#     serializer_class = ArtistSerializer
+
+
+# class AlbumViewSet(viewsets.ModelViewSet):
+#     queryset = Album.objects.all()
+#     serializer_class = AlbumSerializer
+
+
+# class TrackViewSet(viewsets.ModelViewSet):
+#     queryset = Track.objects.all()
+#     serializer_class = TrackSerializer
+
+
+# class PlaylistViewSet(viewsets.ModelViewSet):
+#     queryset = Playlist.objects.all()
+#     serializer_class = PlaylistSerializer
 
 
 # Template Views

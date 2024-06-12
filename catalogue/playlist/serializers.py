@@ -10,16 +10,12 @@ class TrackSerializer(serializers.ModelSerializer):
 
 
 class AlbumSerializer(serializers.ModelSerializer):
-    # tracks = TrackSerializer(many=True, read_only=True)
-
     class Meta:
         model = Album
         fields = "__all__"
 
 
 class ArtistSerializer(serializers.ModelSerializer):
-    # albums = AlbumSerializer(many=True, read_only=True)
-
     class Meta:
         model = Artist
         fields = "__all__"
@@ -40,6 +36,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
         model = Playlist
         fields = ["uuid", "name", "tracks"]
 
+    # create method is called when a new instance of a model is being created.
     def create(self, validated_data):
         tracks_data = validated_data.pop("playlisttrack_set")
         playlist = Playlist.objects.create(**validated_data)
@@ -47,6 +44,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
             PlaylistTrack.objects.create(playlist=playlist, **track_data)
         return playlist
 
+    # update method is called when an existing instance of a model is being updated.
     def update(self, instance, validated_data):
         tracks_data = validated_data.pop("playlisttrack_set")
         instance.name = validated_data.get("name", instance.name)

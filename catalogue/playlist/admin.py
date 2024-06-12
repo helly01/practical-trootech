@@ -20,11 +20,13 @@ class TrackAdmin(admin.ModelAdmin):
     list_filter = ("album",)
 
 
+# admin.TabularInline specifies that the forms should be displayed in a tabular (table) format.
 class PlaylistTrackInline(admin.TabularInline):
     model = PlaylistTrack
     extra = 1
 
 
+# Specifies the number of empty forms to display by default. Setting extra = 1 means that one empty form will be shown
 @admin.register(PlaylistTrack)
 class PlaylistTrackAdmin(admin.ModelAdmin):
     list_display = ("playlist", "track", "order")

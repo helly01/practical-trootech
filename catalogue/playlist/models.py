@@ -10,6 +10,7 @@ class Artist(models.Model):
         return self.name
 
 
+# Use related_name to specify a clear reverse relation.
 class Album(models.Model):
     title = models.CharField(max_length=255)
     artist = models.ForeignKey(Artist, related_name="albums", on_delete=models.CASCADE)
@@ -26,6 +27,7 @@ class Track(models.Model):
         return self.title
 
 
+# Intermediary model, allows you to add extra fields to the relationship
 class Playlist(models.Model):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
@@ -41,5 +43,7 @@ class PlaylistTrack(models.Model):
     order = models.PositiveIntegerField()
 
     class Meta:
+        # The query results for PlaylistTrack will be ordered by the order field in ascending order by default.
         ordering = ["order"]
+        # It ensures that there cannot be duplicate combinations of playlist, track, and order in the table.
         unique_together = ["playlist", "track", "order"]
