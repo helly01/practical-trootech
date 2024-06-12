@@ -1,7 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from playlist.models import Artist, Album, Track, Playlist, PlaylistTrack
-from uuid import uuid4
+from playlist.models import Artist, Album, Track, Playlist
 from rest_framework import status
 from rest_framework.test import APITestCase
 from .serializers import (
@@ -13,47 +12,49 @@ from .serializers import (
 
 
 class ArtistViewSetTests(APITestCase):
+    # setUp method is called before every test method to set up any necessary preconditions.
     def setUp(self):
         self.artist = Artist.objects.create(name="Artist 1")
-        self.valid_payload = {"name": "New Artist"}
-        self.invalid_payload = {"name": ""}
 
+    # every method should start with test and contain any number of assertaion to check condition
     def test_get_all_artists(self):
         response = self.client.get(reverse("artist-list"))
         artists = Artist.objects.all()
         serializer = ArtistSerializer(artists, many=True)
+        # self.assertEqual method is used to compare two values and check if they are equal.
+        # self.assertEqual(actual_value, expected_value, msg=None)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
-    def test_create_valid_artist(self):
-        response = self.client.post(reverse("artist-list"), data=self.valid_payload)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Artist.objects.count(), 2)
-
-    def test_create_invalid_artist(self):
-        response = self.client.post(reverse("artist-list"), data=self.invalid_payload)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_update_artist(self):
-        response = self.client.put(
-            reverse("artist-detail", args=[self.artist.id]), data=self.valid_payload
-        )
+    def test_get_single_artist(self):
+        response = self.client.get(reverse("artist-detail", args=[self.artist.id]))
+        artist = Artist.objects.get(id=self.artist.id)
+        serializer = ArtistSerializer(artist)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.artist.refresh_from_db()
-        self.assertEqual(self.artist.name, self.valid_payload["name"])
+        self.assertEqual(response.data, serializer.data)
 
-    def test_delete_artist(self):
+    def test_create_artist_not_allowed(self):
+        response = self.client.post(reverse("artist-list"), data={"name": "New Artist"})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_artist_not_allowed(self):
+        response = self.client.put(
+            reverse("artist-detail", args=[self.artist.id]),
+            data={"name": "Updated Artist"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_delete_artist_not_allowed(self):
         response = self.client.delete(reverse("artist-detail", args=[self.artist.id]))
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Artist.objects.count(), 0)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class AlbumViewSetTests(APITestCase):
     def setUp(self):
         self.artist = Artist.objects.create(name="Artist 1")
         self.album = Album.objects.create(title="Album 1", artist=self.artist)
-        self.valid_payload = {"title": "New Album", "artist": self.artist.id}
-        self.invalid_payload = {"title": "", "artist": ""}
+        self.valid_payload = {"title": "Album 2", "artist": self.artist.id}
+        self.invalid_payload = {"title": "", "artist": self.artist.id}
 
     def test_get_all_albums(self):
         response = self.client.get(reverse("album-list"))
@@ -62,27 +63,39 @@ class AlbumViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
-    def test_create_valid_album(self):
+    def test_get_single_album(self):
+        response = self.client.get(reverse("album-detail", args=[self.album.id]))
+        album = Album.objects.get(id=self.album.id)
+        serializer = AlbumSerializer(album)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
+
+    def test_create_album_not_allowed(self):
         response = self.client.post(reverse("album-list"), data=self.valid_payload)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Album.objects.count(), 2)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(Album.objects.count(), 1)
 
-    def test_create_invalid_album(self):
-        response = self.client.post(reverse("album-list"), data=self.invalid_payload)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_update_album(self):
+    def test_update_album_not_allowed(self):
         response = self.client.put(
             reverse("album-detail", args=[self.album.id]), data=self.valid_payload
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.album.refresh_from_db()
-        self.assertEqual(self.album.title, self.valid_payload["title"])
+        self.assertNotEqual(self.album.title, self.valid_payload["title"])
 
-    def test_delete_album(self):
+    def test_partial_update_album_not_allowed(self):
+        response = self.client.patch(
+            reverse("album-detail", args=[self.album.id]),
+            data={"title": "Updated Title"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.album.refresh_from_db()
+        self.assertNotEqual(self.album.title, "Updated Title")
+
+    def test_delete_album_not_allowed(self):
         response = self.client.delete(reverse("album-detail", args=[self.album.id]))
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Album.objects.count(), 0)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+        self.assertEqual(Album.objects.count(), 1)
 
 
 class TrackViewSetTests(APITestCase):
@@ -100,27 +113,27 @@ class TrackViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
-    def test_create_valid_track(self):
-        response = self.client.post(reverse("track-list"), data=self.valid_payload)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Track.objects.count(), 2)
-
-    def test_create_invalid_track(self):
-        response = self.client.post(reverse("track-list"), data=self.invalid_payload)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_update_track(self):
-        response = self.client.put(
-            reverse("track-detail", args=[self.track.id]), data=self.valid_payload
-        )
+    def test_get_single_track(self):
+        response = self.client.get(reverse("track-detail", args=[self.track.id]))
+        track = Track.objects.get(id=self.track.id)
+        serializer = TrackSerializer(track)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.track.refresh_from_db()
-        self.assertEqual(self.track.title, self.valid_payload["title"])
+        self.assertEqual(response.data, serializer.data)
 
-    def test_delete_track(self):
+    def test_create_track_not_allowed(self):
+        response = self.client.post(reverse("track-list"), data={"name": "New track"})
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_track_not_allowed(self):
+        response = self.client.put(
+            reverse("track-detail", args=[self.track.id]),
+            data={"name": "Updated track"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_delete_track_not_allowed(self):
         response = self.client.delete(reverse("track-detail", args=[self.track.id]))
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Track.objects.count(), 0)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class PlaylistViewSetTests(APITestCase):
@@ -132,14 +145,6 @@ class PlaylistViewSetTests(APITestCase):
         self.playlist = Playlist.objects.create(name="Test Playlist")
         self.playlist.tracks.add(self.track1, through_defaults={"order": 1})
         self.playlist.tracks.add(self.track2, through_defaults={"order": 2})
-        self.valid_payload = {
-            "name": "New Playlist",
-            "tracks": [
-                {"track": self.track1.id, "order": 1},
-                {"track": self.track2.id, "order": 2},
-            ],
-        }
-        self.invalid_payload = {"name": "", "tracks": []}
 
     def test_get_all_playlists(self):
         response = self.client.get(reverse("playlist-list"))
@@ -148,40 +153,33 @@ class PlaylistViewSetTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, serializer.data)
 
-    # def test_create_valid_playlist(self):
-    #     response = self.client.post(reverse("playlist-list"), data=self.valid_payload)
-    #     self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-    #     self.assertEqual(Playlist.objects.count(), 2)
-
-    def test_create_valid_playlist(self):
-        response = self.client.post(
-            reverse("playlist-list"), data=self.valid_payload, format="json"
+    def test_get_single_playlist(self):
+        response = self.client.get(
+            reverse("playlist-detail", args=[self.playlist.uuid])
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Playlist.objects.count(), 2)
+        playlist = Playlist.objects.get(uuid=self.playlist.uuid)
+        serializer = PlaylistSerializer(playlist)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, serializer.data)
 
-    def test_create_invalid_playlist(self):
+    def test_create_playlist_not_allowed(self):
         response = self.client.post(
-            reverse("playlist-list"), data=self.invalid_payload, format="json"
+            reverse("playlist-list"), data={"name": "New playlist"}
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_update_playlist(self):
+    def test_update_playlist_not_allowed(self):
         response = self.client.put(
             reverse("playlist-detail", args=[self.playlist.uuid]),
-            data=self.valid_payload,
-            format="json",
+            data={"name": "Updated playlist"},
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.playlist.refresh_from_db()
-        self.assertEqual(self.playlist.name, self.valid_payload["name"])
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
-    def test_delete_playlist(self):
+    def test_delete_playlist_not_allowed(self):
         response = self.client.delete(
             reverse("playlist-detail", args=[self.playlist.uuid])
         )
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Playlist.objects.count(), 0)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class PlaylistWebTests(TestCase):
@@ -206,11 +204,11 @@ class PlaylistWebTests(TestCase):
 
     def test_create_playlist_view(self):
         response = self.client.post(
-            reverse("playlist_create"), {"name": "New Playlist"}
+            reverse("playlist_create"), {"name": "Test Playlist"}
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Playlist.objects.count(), 2)
-        self.assertEqual(Playlist.objects.last().name, "New Playlist")
+        self.assertEqual(Playlist.objects.last().name, "Test Playlist")
 
     def test_update_playlist_view(self):
         response = self.client.post(
